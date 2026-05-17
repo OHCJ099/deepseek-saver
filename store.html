@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 工具商店</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#0a0e17;color:#e2e8f0;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.hero{text-align:center;padding:60px 0 40px}
+.hero h1{font-size:2.5em;background:linear-gradient(135deg,#3b82f6,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.hero p{font-size:1.2em;color:#94a3b8}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin:40px 0}
+.product{background:#111827;border:1px solid #1e293b;border-radius:16px;padding:24px;transition:all .2s}
+.product:hover{border-color:#3b82f6;transform:translateY(-4px)}
+.product h2{font-size:1.3em;margin-bottom:12px;color:#3b82f6}
+.product p{color:#94a3b8;margin-bottom:16px}
+.product .price{font-size:1.5em;font-weight:700;color:#f59e0b;margin-bottom:16px}
+.product .btn{display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s}
+.product .btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(59,130,246,.25)}
+.footer{text-align:center;padding:40px 0;color:#94a3b8;font-size:.85em}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="hero">
+<h1>AI 工具商店</h1>
+<p>实用的 AI 开发工具，帮你省钱提效</p>
+</div>
+
+<div class="products">
+<div class="product">
+<h2>DeepSeek 费用计算器</h2>
+<p>计算 DeepSeek API 使用费用，对比不同工具的缓存效率</p>
+<div class="price">5-10元</div>
+<a href="products/deepseek_cost_calculator.html" class="btn">了解详情</a>
+</div>
+<div class="product">
+<h2>API Key 管理器</h2>
+<p>安全管理多个 AI API Key，自动轮换和负载均衡</p>
+<div class="price">10-20元</div>
+<a href="products/api_key_manager.html" class="btn">了解详情</a>
+</div>
+<div class="product">
+<h2>AI 费用优化器</h2>
+<p>分析 AI API 使用模式，提供优化建议</p>
+<div class="price">15-30元</div>
+<a href="products/ai_cost_optimizer.html" class="btn">了解详情</a>
+</div>
+<div class="product">
+<h2>Prompt 优化器</h2>
+<p>优化 Prompt 减少 Token 使用，提高响应质量</p>
+<div class="price">10-20元</div>
+<a href="products/prompt_optimizer.html" class="btn">了解详情</a>
+</div>
+<div class="product">
+<h2>AI 使用监控</h2>
+<p>监控 AI API 使用情况，设置预算告警</p>
+<div class="price">10-15元</div>
+<a href="products/ai_usage_monitor.html" class="btn">了解详情</a>
+</div>
+</div>
+
+<div class="footer">
+<p>所有工具均为一次购买，永久使用</p>
+<p style="margin-top:8px">支持微信/支付宝付款</p>
+</div>
+</div>
+</body>
+</html>

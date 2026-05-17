@@ -1,0 +1,5 @@
+# GitHub Sponsors 配置
+# 将此文件放到 .github/FUNDING.yml 可以在仓库页面显示赞助按钮
+
+github: OHCJ099
+custom: ["https://www.paypal.me/yourusername", "https://afdian.net/a/yourusername"]
