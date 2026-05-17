@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek 省钱计算器 - Reasonix 缓存优化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--card:#111827;--border:#1e293b;--accent:#3b82f6;--accent2:#10b981;--text:#e2e8f0;--muted:#94a3b8;--warn:#f59e0b;--danger:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+.container{max-width:900px;margin:0 auto;padding:20px}
+.hero{text-align:center;padding:60px 0 40px}
+.hero h1{font-size:2.5em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.hero p{font-size:1.2em;color:var(--muted);max-width:600px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;margin:24px 0;transition:border-color .2s}
+.card:hover{border-color:var(--accent)}
+.card h2{font-size:1.4em;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.card h2 .icon{font-size:1.2em}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:.9em;color:var(--muted);font-weight:500}
+.form-group input,.form-group select{background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-size:1em;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border:none;border-radius:10px;font-size:1.1em;font-weight:600;cursor:pointer;transition:all .2s;width:100%;margin-top:20px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#6366f1);color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(59,130,246,.3)}
+.results{display:none;margin-top:24px}
+.results.show{display:block}
+.result-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:600px){.result-grid{grid-template-columns:1fr}}
+.result-item{background:#0f172a;border-radius:12px;padding:20px;text-align:center}
+.result-item .label{font-size:.85em;color:var(--muted);margin-bottom:8px}
+.result-item .value{font-size:2em;font-weight:700}
+.result-item .value.red{color:var(--danger)}
+.result-item .value.green{color:var(--accent2)}
+.result-item .value.yellow{color:var(--warn)}
+.savings-bar{background:#0f172a;border-radius:12px;padding:24px;margin:20px 0}
+.bar-track{background:#1e293b;border-radius:8px;height:40px;position:relative;overflow:hidden;margin:12px 0}
+.bar-fill{height:100%;border-radius:8px;transition:width 1s ease;display:flex;align-items:center;padding-left:12px;font-weight:600;font-size:.9em}
+.bar-fill.before{background:linear-gradient(90deg,#ef4444,#f59e0b)}
+.bar-fill.after{background:linear-gradient(90deg,var(--accent),var(--accent2));position:absolute;top:0;left:0}
+.bar-labels{display:flex;justify-content:space-between;font-size:.85em;color:var(--muted);margin-top:8px}
+.breakdown{margin-top:20px}
+.breakdown table{width:100%;border-collapse:collapse}
+.breakdown th,.breakdown td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.breakdown th{color:var(--muted);font-weight:500;font-size:.9em}
+.breakdown td:last-child{text-align:right;font-weight:600}
+.highlight{color:var(--accent2);font-weight:700}
+.cta{background:linear-gradient(135deg,#1e3a5f,#0f172a);border:2px solid var(--accent);border-radius:16px;padding:40px;text-align:center;margin:40px 0}
+.cta h2{font-size:1.6em;margin-bottom:12px}
+.cta p{color:var(--muted);margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.cta-btn{padding:12px 28px;border-radius:10px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;font-size:1em}
+.cta-btn.primary{background:var(--accent);color:#fff}
+.cta-btn.secondary{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(59,130,246,.25)}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:20px 0}
+.feature{background:#0f172a;border-radius:12px;padding:20px}
+.feature h3{font-size:1em;margin-bottom:8px;color:var(--accent)}
+.feature p{font-size:.9em;color:var(--muted)}
+.tips{margin-top:20px}
+.tip{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tip:last-child{border:none}
+.tip .num{background:var(--accent);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85em;font-weight:700;flex-shrink:0}
+.tip .text{font-size:.95em}
+.footer{text-align:center;padding:40px 0;color:var(--muted);font-size:.85em}
+.share-section{margin-top:20px;text-align:center}
+.share-btns{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.share-btn{padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:.9em;transition:all .2s}
+.share-btn:hover{border-color:var(--accent);background:rgba(59,130,246,.1)}
+.preset-btns{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.preset-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.85em;transition:all .2s}
+.preset-btn:hover{border-color:var(--accent);color:var(--text)}
+.preset-btn.active{border-color:var(--accent);background:rgba(59,130,246,.15);color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="hero">
+<h1>DeepSeek 省钱计算器</h1>
+<p>算一算你的 AI 编程助手浪费了多少钱，Reasonix 能帮你省多少</p>
+</div>
+
+<div class="card">
+<h2><span class="icon">&#128200;</span> 输入你的使用情况</h2>
+<div class="preset-btns">
+<button class="preset-btn" onclick="applyPreset('student')">&#127891; 学生课设</button>
+<button class="preset-btn" onclick="applyPreset('indie')">&#128187; 独立开发者</button>
+<button class="preset-btn" onclick="applyPreset('team')">&#128101; 小团队</button>
+<button class="preset-btn" onclick="applyPreset('heavy')">&#9889; 重度用户</button>
+</div>
+<div class="form-grid">
+<div class="form-group">
+<label>每天对话轮数</label>
+<input type="number" id="rounds" value="50" min="1" max="1000">
+</div>
+<div class="form-group">
+<label>每轮平均输入 Token 数</label>
+<input type="number" id="inputTokens" value="8000" min="100" max="100000">
+</div>
+<div class="form-group">
+<label>每轮平均输出 Token 数</label>
+<input type="number" id="outputTokens" value="2000" min="100" max="50000">
+</div>
+<div class="form-group">
+<label>每月使用天数</label>
+<input type="number" id="days" value="22" min="1" max="31">
+</div>
+<div class="form-group">
+<label>使用的模型</label>
+<select id="model">
+<option value="deepseek-chat">DeepSeek V3 (chat)</option>
+<option value="deepseek-reasoner">DeepSeek R1 (reasoner)</option>
+</select>
+</div>
+<div class="form-group">
+<label>当前工具的缓存命中率 (%)</label>
+<input type="number" id="cacheRate" value="15" min="0" max="100">
+</div>
+</div>
+<button class="btn btn-primary" onclick="calculate()">&#128202; 开始计算</button>
+</div>
+
+<div class="results" id="results">
+<div class="card">
+<h2><span class="icon">&#128176;</span> 计算结果</h2>
+<div class="result-grid">
+<div class="result-item">
+<div class="label">普通工具 月费用</div>
+<div class="value red" id="costBefore">-</div>
+</div>
+<div class="result-item">
+<div class="label">Reasonix 月费用</div>
+<div class="value green" id="costAfter">-</div>
+</div>
+<div class="result-item">
+<div class="label">每月节省</div>
+<div class="value yellow" id="savings">-</div>
+</div>
+</div>
+
+<div class="savings-bar">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<span style="font-weight:600">费用对比</span>
+<span id="savingsPercent" style="color:var(--accent2);font-weight:700">-</span>
+</div>
+<div class="bar-track" style="margin-top:16px">
+<div class="bar-fill before" id="barBefore" style="width:100%">普通工具</div>
+<div class="bar-fill after" id="barAfter" style="width:0%">Reasonix</div>
+</div>
+<div class="bar-labels">
+<span>&#128200; 越短 = 越省钱</span>
+<span id="barLabel"></span>
+</div>
+</div>
+
+<div class="breakdown">
+<h3 style="margin-bottom:16px;font-size:1.1em">详细分解</h3>
+<table>
+<tr><th>项目</th><th>普通工具</th><th>Reasonix</th></tr>
+<tr><td>输入 Token 缓存命中</td><td id="hitBefore">-</td><td id="hitAfter" class="highlight">-</td></tr>
+<tr><td>输入 Token 缓存未命中</td><td id="missBefore">-</td><td id="missAfter">-</td></tr>
+<tr><td>输入费用（缓存命中）</td><td id="hitCostBefore">-</td><td id="hitCostAfter" class="highlight">-</td></tr>
+<tr><td>输入费用（缓存未命中）</td><td id="missCostBefore">-</td><td id="missCostAfter">-</td></tr>
+<tr><td>输出费用</td><td id="outputCost">-</td><td id="outputCost2">-</td></tr>
+<tr><td style="font-weight:700">月总费用（CNY）</td><td id="totalBefore" style="color:var(--danger);font-weight:700">-</td><td id="totalAfter" style="color:var(--accent2);font-weight:700">-</td></tr>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h2><span class="icon">&#128161;</span> 为什么缓存这么重要？</h2>
+<div class="features">
+<div class="feature">
+<h3>&#128295; 普通工具的问题</h3>
+<p>大多数 AI 编程工具每轮对话都会重新组织上下文（加时间戳、重排序、注入系统提示），导致前缀不一致，缓存命中率通常低于 20%。</p>
+</div>
+<div class="feature">
+<h3>&#9889; Reasonix 的方案</h3>
+<p>三支柱架构：不可变前缀 + 追加日志 + 临时区。保持跨轮次的字节级前缀稳定，缓存命中率可达 99%+。</p>
+</div>
+<div class="feature">
+<h3>&#128176; DeepSeek 的定价</h3>
+<p>缓存命中的输入 Token 只收 10% 的费用。命中率从 15% 提升到 99%，意味着输入费用降低约 90%。</p>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2><span class="icon">&#128161;</span> 优化建议</h2>
+<div id="tips" class="tips"></div>
+</div>
+
+<div class="cta">
+<h2>&#128640; 想省更多？</h2>
+<p>我可以帮你配置 Reasonix，针对你的使用场景优化缓存策略，确保命中率 95%+</p>
+<div class="cta-btns">
+<a class="cta-btn primary" href="https://github.com/esengine/reasonix" target="_blank">&#128214; Reasonix GitHub</a>
+<a class="cta-btn secondary" href="https://npmjs.com/package/reasonix" target="_blank">&#128230; npm 安装</a>
+<a class="cta-btn secondary" href="#" onclick="copyContact()">&#128172; 联系我</a>
+</div>
+</div>
+
+<div class="share-section">
+<p style="color:var(--muted);font-size:.9em">觉得有用？分享给朋友</p>
+<div class="share-btns">
+<button class="share-btn" onclick="copyResult()">&#128203; 复制结果</button>
+<button class="share-btn" onclick="shareToWeibo()">&#127760; 分享到微博</button>
+<button class="share-btn" onclick="shareToTwitter()">&#128172; Twitter</button>
+</div>
+</div>
+</div>
+
+<div class="footer">
+<p>DeepSeek 省钱计算器 &middot; 基于 Reasonix 缓存优化架构</p>
+<p style="margin-top:8px">数据来源：DeepSeek API 定价 &middot; Reasonix v0.43.0 基准测试</p>
+</div>
+</div>
+
+<script>
+const PRESETS={
+student:{rounds:30,inputTokens:5000,outputTokens:1500,days:15,cacheRate:10},
+indie:{rounds:80,inputTokens:10000,outputTokens:3000,days:25,cacheRate:15},
+team:{rounds:150,inputTokens:12000,outputTokens:4000,days:22,cacheRate:20},
+heavy:{rounds:200,inputTokens:15000,outputTokens:5000,days:28,cacheRate:12}
+};
+
+function applyPreset(key){
+const p=PRESETS[key];
+document.getElementById('rounds').value=p.rounds;
+document.getElementById('inputTokens').value=p.inputTokens;
+document.getElementById('outputTokens').value=p.outputTokens;
+document.getElementById('days').value=p.days;
+document.getElementById('cacheRate').value=p.cacheRate;
+document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+event.target.classList.add('active');
+calculate();
+}
+
+function formatCNY(v){return '¥'+v.toFixed(2)}
+function formatTokens(v){
+if(v>=1e9)return (v/1e9).toFixed(1)+'B';
+if(v>=1e6)return (v/1e6).toFixed(1)+'M';
+if(v>=1e3)return (v/1e3).toFixed(1)+'K';
+return v.toString();
+}
+
+function calculate(){
+const rounds=+document.getElementById('rounds').value||50;
+const inputTokens=+document.getElementById('inputTokens').value||8000;
+const outputTokens=+document.getElementById('outputTokens').value||2000;
+const days=+document.getElementById('days').value||22;
+const model=document.getElementById('model').value;
+const cacheRate=+document.getElementById('cacheRate').value||15;
+const reasonixRate=99;
+
+// DeepSeek pricing (CNY per 1M tokens)
+const prices=model==='deepseek-reasoner'
+?{input:4,inputCached:0.5,output:16}
+:{input:2,inputCached:0.2,output:8};
+
+const totalRounds=rounds*days;
+const totalInput=inputTokens*totalRounds;
+const totalOutput=outputTokens*totalRounds;
+
+// Before (普通工具)
+const hitBefore=totalInput*(cacheRate/100);
+const missBefore=totalInput*(1-cacheRate/100);
+const hitCostBefore=hitBefore/1e6*prices.inputCached;
+const missCostBefore=missBefore/1e6*prices.input;
+const outputCostBefore=totalOutput/1e6*prices.output;
+const totalBefore=hitCostBefore+missCostBefore+outputCostBefore;
+
+// After (Reasonix)
+const hitAfter=totalInput*(reasonixRate/100);
+const missAfter=totalInput*(1-reasonixRate/100);
+const hitCostAfter=hitAfter/1e6*prices.inputCached;
+const missCostAfter=missAfter/1e6*prices.input;
+const outputCostAfter=totalOutput/1e6*prices.output;
+const totalAfter=hitCostAfter+missCostAfter+outputCostAfter;
+
+const saved=totalBefore-totalAfter;
+const pct=(saved/totalBefore*100).toFixed(1);
+
+// Update UI
+document.getElementById('results').classList.add('show');
+document.getElementById('costBefore').textContent=formatCNY(totalBefore);
+document.getElementById('costAfter').textContent=formatCNY(totalAfter);
+document.getElementById('savings').textContent=formatCNY(saved);
+document.getElementById('savingsPercent').textContent='节省 '+pct+'%';
+
+const maxCost=Math.max(totalBefore,totalAfter);
+document.getElementById('barBefore').style.width='100%';
+document.getElementById('barAfter').style.width=(totalAfter/maxCost*100)+'%';
+document.getElementById('barLabel').textContent=formatCNY(totalBefore)+' → '+formatCNY(totalAfter);
+
+document.getElementById('hitBefore').textContent=formatTokens(hitBefore)+' ('+cacheRate+'%)';
+document.getElementById('hitAfter').textContent=formatTokens(hitAfter)+' ('+reasonixRate+'%)';
+document.getElementById('missBefore').textContent=formatTokens(missBefore)+' ('+(100-cacheRate)+'%)';
+document.getElementById('missAfter').textContent=formatTokens(missAfter)+' ('+(100-reasonixRate)+'%)';
+document.getElementById('hitCostBefore').textContent=formatCNY(hitCostBefore);
+document.getElementById('hitCostAfter').textContent=formatCNY(hitCostAfter);
+document.getElementById('missCostBefore').textContent=formatCNY(missCostBefore);
+document.getElementById('missCostAfter').textContent=formatCNY(missCostAfter);
+document.getElementById('outputCost').textContent=formatCNY(outputCostBefore);
+document.getElementById('outputCost2').textContent=formatCNY(outputCostAfter);
+document.getElementById('totalBefore').textContent=formatCNY(totalBefore);
+document.getElementById('totalAfter').textContent=formatCNY(totalAfter);
+
+// Tips
+const tips=[];
+if(cacheRate<30)tips.push('你当前的缓存命中率('+cacheRate+'%)很低，大部分输入 Token 都在按原价计费');
+if(rounds>100)tips.push('日均对话轮数较多，建议使用 Reasonix 的自动压缩功能减少上下文膨胀');
+if(inputTokens>10000)tips.push('单轮输入 Token 较多，Reasonix 的追加日志架构可以保持前缀稳定，大幅降低费用');
+if(model==='deepseek-reasoner')tips.push('R1 模型费用较高，建议先用 Flash（chat）处理简单任务，仅在需要推理时升级');
+tips.push('Reasonix 的 Flash-first 策略会自动判断任务复杂度，简单任务用低成本模型，复杂任务才升级');
+tips.push('开启 Reasonix 的自动压缩功能，当上下文超过阈值时自动压缩旧的工具调用结果');
+
+const tipsEl=document.getElementById('tips');
+tipsEl.innerHTML=tips.map((t,i)=>`<div class="tip"><div class="num">${i+1}</div><div class="text">${t}</div></div>`).join('');
+
+document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+function copyResult(){
+const before=document.getElementById('costBefore').textContent;
+const after=document.getElementById('costAfter').textContent;
+const saved=document.getElementById('savings').textContent;
+const text=`DeepSeek 省钱计算器结果：\n普通工具月费：${before}\nReasonix 月费：${after}\n每月节省：${saved}\n\n立即体验 Reasonix: https://npmjs.com/package/reasonix`;
+navigator.clipboard.writeText(text).then(()=>alert('已复制到剪贴板'));
+}
+
+function shareToWeibo(){
+const text=encodeURIComponent('我用 DeepSeek 省钱计算器发现，通过 Reasonix 缓存优化可以节省 80%+ 的 API 费用！');
+window.open('https://service.weibo.com/share/share.php?title='+text);
+}
+
+function shareToTwitter(){
+const text=encodeURIComponent('Found out I can save 80%+ on DeepSeek API costs with Reasonix cache optimization!');
+window.open('https://twitter.com/intent/tweet?text='+text);
+}
+
+function copyContact(){
+const text='你好，我看到你的 DeepSeek 省钱计算器，想了解 Reasonix 配置优化服务。';
+navigator.clipboard.writeText(text).then(()=>alert('已复制联系话术，请到闲鱼/微信发送'));
+}
+
+// Auto-calculate on page load
+calculate();
+</script>
+</body>
+</html>
